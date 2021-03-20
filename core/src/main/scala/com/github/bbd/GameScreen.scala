@@ -1,53 +1,53 @@
 package com.github.bbd
 
+import akka.actor.ActorRef
 import com.badlogic.gdx.Screen
+import akka.pattern.ask
+import akka.util.Timeout
+
+import java.util.concurrent.TimeUnit
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.Duration
 
 trait GameScreen extends Screen{
 
-  val world: GameWorld
-  val gameLogic: GameLogic
+  val world: ActorRef
+  private implicit val timeout: Timeout = Timeout(Duration(1, TimeUnit.SECONDS))
+  implicit val ec: ExecutionContext
 
   override def show(): Unit = ???
 
   override def render(delta: Float): Unit = {
-    update(world, delta)
-    render(world, delta)
+    update(delta)
+    val entitiesToRender: Seq[ReadOnlyEntity] = Await.result(world.ask(GameWorld.GetReadOnlyEntities)
+      .mapTo[Seq[ReadOnlyEntity]], timeout.duration)
+
+    entitiesToRender.foreach(entity => renderEntity(entity, delta))
   }
 
-  def update(world: GameWorld, delta: Float): Unit = {
-    val eventsFromUpdate: Seq[GameEvent] = world.entities.toSeq.flatMap{
-      case (_, entity) => {
-        val replyEvents: Seq[GameEvent] = entity.events.flatMap(ev => {
-          //apply all events from previous frame to entities and maybe generate new events
-          applyEventToEntity(entity, ev)
-        }).toSeq
+  def update(delta: Float): Unit = {
+    val eventsFromPrevFrameFuture: Future[Seq[GameEvent]] = world.ask(GameWorld.ApplyEntityEvents)
+      .mapTo[Seq[GameEvent]]
+    val eventsFromGameLogicFuture: Future[Seq[GameEvent]] = world.ask(GameWorld.RunGameLogic(delta))
+      .mapTo[Seq[GameEvent]]
 
-        val gameLogicOut: LogicOutput = gameLogic.run(world, entity, delta)
-
-        //some effects can be applied directly without generating an event
-        gameLogicOut.stateTransitions.foreach(transition => entity.applyTransition(transition))
-
-        replyEvents ++ gameLogicOut.events
-      }
-    }
+    val allEvents: Seq[GameEvent] = Await.result(for{
+      eventsFromPrevFrame <- eventsFromPrevFrameFuture
+      eventsFromGameLogic <- eventsFromGameLogicFuture
+    }yield {
+      eventsFromPrevFrame ++ eventsFromGameLogic
+    }, timeout.duration)
 
     //route events from this frame to the relevant entity queues
-    eventsFromUpdate.foreach({
-      case event: ToEntityEvent => world.entities(event.toId).events.append(event)
-      case event => ???
+    val eventsToRoute: Seq[ToEntityEvent] = allEvents.flatMap({
+      case event: ToEntityEvent => Some(event)
+      case _ => None
     })
+
+    world.tell(GameWorld.RouteEvents(eventsToRoute), ActorRef.noSender)
   }
 
-  def applyEventToEntity(entity: GameEntity, event: ToEntityEvent): Seq[GameEvent]
-
-  def render(world: GameWorld, dt: Float): Unit = {
-    world.entities.foreach({
-      case (id, entity) => renderEntity(entity, dt)
-    })
-    //render world entities
-  }
-
-  def renderEntity(entity: GameEntity, fl: Float): Unit
+  def renderEntity(entity: ReadOnlyEntity, fl: Float): Unit
 
   override def resize(width: Int, height: Int): Unit = ???
 
