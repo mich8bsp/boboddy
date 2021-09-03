@@ -12,7 +12,10 @@ object AsciiClock {
   val HOUR_SYMBOL = 'H'
   val MINUTE_SYMBOL = 'm'
   val SECOND_SYMBOL = 's'
-  val CLOCK_CENTER_SYMBOL = 'X'
+  val CLOCK_FRAME_HORIZONTAL_SYMBOL = '-'
+  val CLOCK_FRAME_VERTICAL_SYMBOL = '|'
+  val CLOCK_FRAME_CORNER_SYMBOL = '□'
+  val CLOCK_FRAME_CENTER_SYMBOL = 'X'
 
   def getAsciiTimeNow(): String = {
     val Array(hours, minutes, seconds) = new SimpleDateFormat("HH:mm:ss").format(Date.from(Instant.now))
@@ -29,7 +32,7 @@ object AsciiClock {
     drawClockHand(hoursAngleDegrees, HOUR_SYMBOL, handSizeProportion = 0.5)
     drawClockHand(minutesAngleDegrees, MINUTE_SYMBOL)
     drawClockHand(secondsAngleDegrees, SECOND_SYMBOL)
-    widgetScreen(WIDGET_SIZE/2)(WIDGET_SIZE/2) = CLOCK_CENTER_SYMBOL
+    drawClockFrame()
 
     widgetScreen.map(_.mkString("")).mkString("\n")
   }
@@ -62,6 +65,20 @@ object AsciiClock {
     pixelsToDraw.foreach({
       case (i, j) => screen(WIDGET_SIZE - j - 1)(i) = handSymbol
     })
+  }
+
+  private def drawClockFrame()(implicit screen: Array[Array[Char]]): Unit = {
+    screen(WIDGET_SIZE/2)(WIDGET_SIZE/2) = CLOCK_FRAME_CENTER_SYMBOL
+    (0 until WIDGET_SIZE).foreach(i => {
+      screen(0)(i) = CLOCK_FRAME_HORIZONTAL_SYMBOL
+      screen(i)(0) = CLOCK_FRAME_VERTICAL_SYMBOL
+      screen(WIDGET_SIZE - 1)(i) = CLOCK_FRAME_HORIZONTAL_SYMBOL
+      screen(i)(WIDGET_SIZE - 1) = CLOCK_FRAME_VERTICAL_SYMBOL
+    })
+    screen(0)(0) = CLOCK_FRAME_CORNER_SYMBOL
+    screen(WIDGET_SIZE - 1)(0) = CLOCK_FRAME_CORNER_SYMBOL
+    screen(0)(WIDGET_SIZE - 1) = CLOCK_FRAME_CORNER_SYMBOL
+    screen(WIDGET_SIZE - 1)(WIDGET_SIZE - 1) = CLOCK_FRAME_CORNER_SYMBOL
   }
 
   def main(args: Array[String]): Unit = {
