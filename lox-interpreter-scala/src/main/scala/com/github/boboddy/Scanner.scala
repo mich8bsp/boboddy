@@ -1,26 +1,32 @@
 package com.github.boboddy
 
-import com.github.boboddy.Scanner.RESERVED_KEYWORDS
 
 import scala.collection.mutable
 import com.github.boboddy.TokenType._
 
 class Scanner(source: String) {
+  import com.github.boboddy.Scanner._
 
   private var start: Int = 0
   private var current: Int = 0
   private var line: Int = 1
 
   def scanTokens(): Seq[Token] = {
-    val tokens: mutable.Buffer[Token] = mutable.Buffer[Token]()
-    while (!isAtEnd) {
-      start = current
-      val token: Option[Token] = scanToken()
-      token.foreach(tokens.append)
-    }
+    try {
+      val tokens: mutable.Buffer[Token] = mutable.Buffer[Token]()
+      while (!isAtEnd) {
+        start = current
+        val token: Option[Token] = scanToken()
+        token.foreach(tokens.append)
+      }
 
-    tokens.append(Token(EOF, "", null, line))
-    tokens.toSeq
+      tokens.append(Token(EOF, "", None, line))
+      tokens.toSeq
+    } finally {
+      start = 0
+      current = 0
+      line = 1
+    }
   }
 
   private def isAtEnd: Boolean = current >= source.length
@@ -48,6 +54,9 @@ class Scanner(source: String) {
           advance()
         }
         None
+      } else if(matchAtCurrent('*')){
+        matchMultiLineComment()
+        None
       } else {
         Some(createToken(SLASH))
       }
@@ -66,9 +75,9 @@ class Scanner(source: String) {
     }
   }
 
-  private def createToken(tokenType: TokenType, literal: Object = null): Token = {
+  private def createToken[L](tokenType: TokenType, literal: Option[L] = None): Token = {
     val text: String = source.substring(start, current)
-    Token(tokenType, text, literal, line)
+    Token(tokenType, text, literal.map(_.asInstanceOf[Object]), line)
   }
 
   private def getAndAdvance(): Char = {
@@ -83,7 +92,7 @@ class Scanner(source: String) {
 
   private def peek: Char = {
     if (isAtEnd) {
-      '\0'
+      EOF_CHAR
     } else {
       source.charAt(current)
     }
@@ -91,7 +100,7 @@ class Scanner(source: String) {
 
   private def peekNext: Char = {
     if (current + 1 >= source.length){
-      '\0'
+      EOF_CHAR
     }else {
       source.charAt(current + 1)
     }
@@ -120,7 +129,7 @@ class Scanner(source: String) {
     }else{
       advance()
       val value: String = source.substring(start+1, current-1)
-      Some(createToken(STRING, value))
+      Some(createToken(STRING, Some(value)))
     }
   }
 
@@ -136,7 +145,7 @@ class Scanner(source: String) {
       }
     }
 
-    createToken(NUMBER, source.substring(start, current).toDouble)
+    createToken(NUMBER, Some(source.substring(start, current).toDouble))
   }
 
   private def matchIdentifier(): Token = {
@@ -150,11 +159,29 @@ class Scanner(source: String) {
     createToken(tokenType)
   }
 
+  private def matchMultiLineComment(): Unit = {
+    val multiLineCommentStartLine = line
+    while (!(peek == '*' && peekNext == '/') && !isAtEnd){
+      if(peek == '\n'){
+        line += 1
+      }
+      advance()
+    }
+    if(!isAtEnd) {
+      //consume both * and /
+      advance()
+      advance()
+    }else{
+      ErrorHandler.error(multiLineCommentStartLine, "Unterminated multi-line comment.")
+    }
+  }
+
   private def isAlpha(c: Char): Boolean = c.isLetter || c == '_'
   private def isAlphaNumeric(c: Char): Boolean = c.isLetterOrDigit || c == '_'
 }
 
 object Scanner{
+  val EOF_CHAR = '\u0000'
   val RESERVED_KEYWORDS: Map[String, TokenType] = Seq(AND, CLASS, ELSE, FALSE, FOR, FUN, IF, NIL, OR, PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE)
     .map(t => t.name().toLowerCase -> t)
     .toMap
