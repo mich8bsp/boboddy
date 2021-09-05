@@ -5,6 +5,7 @@ import scala.collection.mutable
 import com.github.boboddy.TokenType._
 
 class Scanner(source: String) {
+
   import com.github.boboddy.Scanner._
 
   private var start: Int = 0
@@ -54,7 +55,7 @@ class Scanner(source: String) {
           advance()
         }
         None
-      } else if(matchAtCurrent('*')){
+      } else if (matchAtCurrent('*')) {
         matchMultiLineComment()
         None
       } else {
@@ -99,9 +100,9 @@ class Scanner(source: String) {
   }
 
   private def peekNext: Char = {
-    if (current + 1 >= source.length){
+    if (current + 1 >= source.length) {
       EOF_CHAR
-    }else {
+    } else {
       source.charAt(current + 1)
     }
   }
@@ -116,31 +117,31 @@ class Scanner(source: String) {
   }
 
   private def matchString(): Option[Token] = {
-    while(peek != '"' && !isAtEnd){
-      if(peek == '\n'){
+    while (peek != '"' && !isAtEnd) {
+      if (peek == '\n') {
         line += 1
         advance()
       }
     }
 
-    if(isAtEnd){
+    if (isAtEnd) {
       ErrorHandler.error(line, "Unterminated string.")
       None
-    }else{
+    } else {
       advance()
-      val value: String = source.substring(start+1, current-1)
+      val value: String = source.substring(start + 1, current - 1)
       Some(createToken(STRING, Some(value)))
     }
   }
 
   private def matchNumber(): Token = {
-    while(peek.isDigit){
+    while (peek.isDigit) {
       advance()
     }
 
-    if(peek == '.' && peekNext.isDigit){
+    if (peek == '.' && peekNext.isDigit) {
       advance()
-      while(peek.isDigit){
+      while (peek.isDigit) {
         advance()
       }
     }
@@ -149,7 +150,7 @@ class Scanner(source: String) {
   }
 
   private def matchIdentifier(): Token = {
-    while(isAlphaNumeric(peek)){
+    while (isAlphaNumeric(peek)) {
       advance()
     }
 
@@ -161,26 +162,35 @@ class Scanner(source: String) {
 
   private def matchMultiLineComment(): Unit = {
     val multiLineCommentStartLine = line
-    while (!(peek == '*' && peekNext == '/') && !isAtEnd){
-      if(peek == '\n'){
-        line += 1
+    var nestingLevel = 1
+    while (nestingLevel > 0) {
+      while (!(peek == '*' && peekNext == '/') && !isAtEnd) {
+        if (peek == '\n') {
+          line += 1
+        }else if(peek == '/' && peekNext == '*'){
+          nestingLevel += 1
+          advance() //advance by another 1 to prevent /*/ from being a legal comment
+        }
+        advance()
       }
-      advance()
-    }
-    if(!isAtEnd) {
-      //consume both * and /
-      advance()
-      advance()
-    }else{
-      ErrorHandler.error(multiLineCommentStartLine, "Unterminated multi-line comment.")
+      if (!isAtEnd) {
+        //consume both * and /
+        advance()
+        advance()
+        nestingLevel -= 1
+      } else {
+        ErrorHandler.error(multiLineCommentStartLine, "Unterminated multi-line comment.")
+        nestingLevel = 0
+      }
     }
   }
 
   private def isAlpha(c: Char): Boolean = c.isLetter || c == '_'
+
   private def isAlphaNumeric(c: Char): Boolean = c.isLetterOrDigit || c == '_'
 }
 
-object Scanner{
+object Scanner {
   val EOF_CHAR = '\u0000'
   val RESERVED_KEYWORDS: Map[String, TokenType] = Seq(AND, CLASS, ELSE, FALSE, FOR, FUN, IF, NIL, OR, PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE)
     .map(t => t.name().toLowerCase -> t)
