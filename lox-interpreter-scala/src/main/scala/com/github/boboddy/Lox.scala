@@ -13,6 +13,9 @@ object Lox {
       if(ErrorHandler.hadError){
         System.exit(65)
       }
+      if(ErrorHandler.hadRuntimeError){
+        System.exit(70)
+      }
     } finally {
       source.close()
     }
@@ -23,6 +26,7 @@ object Lox {
     while(line != null){
       run(line)
       ErrorHandler.hadError = false
+      ErrorHandler.hadRuntimeError = false
       line = StdIn.readLine()
     }
   }
@@ -34,7 +38,7 @@ object Lox {
     val parsedAst: Option[Expr] = parser.parse()
     parsedAst match {
       case None | Some(_) if ErrorHandler.hadError =>
-      case Some(ast) => println(ASTPrinter.print(ast))
+      case Some(ast) => Interpreter.interpret(ast)
     }
   }
 

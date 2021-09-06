@@ -2,6 +2,7 @@ package com.github.boboddy
 
 object ErrorHandler {
   var hadError = false
+  var hadRuntimeError = false
 
   def error(line: Int, message: String, where: String = ""): Unit = {
     System.err.println(s"[line $line] Error$where: $message")
@@ -15,6 +16,11 @@ object ErrorHandler {
       s" at '${token.lexeme}'"
     }
     error(line = token.line, message = message, where = where)
+  }
+
+  def runtimeError(e: RuntimeError): Unit = {
+    System.err.println(s"${e.getMessage}\n[line ${e.token.line}]")
+    hadRuntimeError = true
   }
 }
 
