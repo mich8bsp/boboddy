@@ -78,7 +78,7 @@ class Scanner(source: String) {
 
   private def createToken[L](tokenType: TokenType, literal: Option[L] = None): Token = {
     val text: String = source.substring(start, current)
-    Token(tokenType, text, literal.map(_.asInstanceOf[Object]), line)
+    Token(tokenType, text, literal, line)
   }
 
   private def getAndAdvance(): Char = {
