@@ -94,15 +94,21 @@ class Parser(tokens: Seq[Token]) {
 
   private def binaryExpr(subExpression: () => Expr,
                          tokenTypes: TokenType*): Expr = {
-    var expr = subExpression()
+    if(matchExpr(tokenTypes: _*)){
+      //binary expression is missing left side expression
+      subExpression() // read right side expression and discard
+      throw error(previous, "Expect expression.")
+    }else {
+      var expr = subExpression()
 
-    while (matchExpr(tokenTypes: _*)) {
-      val operator: Token = previous
-      val right: Expr = subExpression()
-      expr = BinaryExpr(left = expr, operator = operator, right = right)
+      while (matchExpr(tokenTypes: _*)) {
+        val operator: Token = previous
+        val right: Expr = subExpression()
+        expr = BinaryExpr(left = expr, operator = operator, right = right)
+      }
+
+      expr
     }
-
-    expr
   }
 
   private def consume(tokenType: TokenType,
