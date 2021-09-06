@@ -23,28 +23,46 @@ object Interpreter {
           Some(left - right)
         case TokenType.SLASH =>
           val (left, right) = getOperandsAsNumbers(operator, leftValue, rightValue)
-          Some(left / right)
+          if(right == 0D){
+            throw RuntimeError(operator, "/ by zero")
+          }else{
+            Some(left / right)
+          }
         case TokenType.STAR =>
           val (left, right) = getOperandsAsNumbers(operator, leftValue, rightValue)
           Some(left * right)
         case TokenType.PLUS =>
           (leftValue, rightValue) match {
             case (Some(d1: Double), Some(d2: Double)) => Some(d1 + d2)
-            case (Some(d1: String), Some(d2: String)) => Some(d1 + d2)
+            case (Some(s1: String), Some(s2: String)) => Some(s1 + s2)
+            case (Some(s1: String), Some(x)) => Some(s1 + x.toString)
+            case (Some(x), Some(s1: String)) => Some(x.toString + s1)
             case _ => throw RuntimeError(operator, "Operands must be two numbers or two strings.")
           }
         case TokenType.LESS =>
-          val (left, right) = getOperandsAsNumbers(operator, leftValue, rightValue)
-          Some(left < right)
+          (leftValue, rightValue) match {
+            case (Some(d1: Double), Some(d2: Double)) => Some(d1 < d2)
+            case (Some(s1: String), Some(s2: String)) => Some(s1 < s2)
+            case _ => throw RuntimeError(operator, "Operands must be two numbers or two strings.")
+          }
         case TokenType.LESS_EQUAL =>
-          val (left, right) = getOperandsAsNumbers(operator, leftValue, rightValue)
-          Some(left <= right)
+          (leftValue, rightValue) match {
+            case (Some(d1: Double), Some(d2: Double)) => Some(d1 <= d2)
+            case (Some(s1: String), Some(s2: String)) => Some(s1 <= s2)
+            case _ => throw RuntimeError(operator, "Operands must be two numbers or two strings.")
+          }
         case TokenType.GREATER =>
-          val (left, right) = getOperandsAsNumbers(operator, leftValue, rightValue)
-          Some(left > right)
+          (leftValue, rightValue) match {
+            case (Some(d1: Double), Some(d2: Double)) => Some(d1 > d2)
+            case (Some(s1: String), Some(s2: String)) => Some(s1 > s2)
+            case _ => throw RuntimeError(operator, "Operands must be two numbers or two strings.")
+          }
         case TokenType.GREATER_EQUAL =>
-          val (left, right) = getOperandsAsNumbers(operator, leftValue, rightValue)
-          Some(left >= right)
+          (leftValue, rightValue) match {
+            case (Some(d1: Double), Some(d2: Double)) => Some(d1 >= d2)
+            case (Some(s1: String), Some(s2: String)) => Some(s1 >= s2)
+            case _ => throw RuntimeError(operator, "Operands must be two numbers or two strings.")
+          }
         case TokenType.EQUAL_EQUAL => Some(leftValue == rightValue)
         case TokenType.BANG_EQUAL => Some(leftValue != rightValue)
         case _ => throw RuntimeError(operator, "Unrecognized binary operator.")
