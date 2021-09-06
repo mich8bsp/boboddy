@@ -30,7 +30,12 @@ object Lox {
   private def run(source: String): Unit = {
     val scanner: Scanner = new Scanner(source)
     val tokens: Seq[Token] = scanner.scanTokens()
-    tokens.foreach(println)
+    val parser: Parser = new Parser(tokens)
+    val parsedAst: Option[Expr] = parser.parse()
+    parsedAst match {
+      case None | Some(_) if ErrorHandler.hadError =>
+      case Some(ast) => println(ASTPrinter.print(ast))
+    }
   }
 
 
