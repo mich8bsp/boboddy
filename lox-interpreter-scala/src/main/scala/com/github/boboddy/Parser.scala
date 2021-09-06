@@ -14,7 +14,32 @@ class Parser(tokens: Seq[Token]) {
   }
 
   private def expression(): Expr = {
-    equality()
+    ternary()
+  }
+
+  private def ternary(): Expr = {
+    //ternary -> equality ("?") ternary (":") ternary | equality
+    var expr = equality()
+
+    if (matchExpr(QUESTION_MARK)) {
+      val leftOperator = previous
+      val exprIfTrue = ternary()
+      if (matchExpr(COLON)) {
+        val rightOperator = previous
+        val exprIfFalse = ternary()
+        expr = TernaryExpr(
+          left = expr,
+          middle = exprIfTrue,
+          right = exprIfFalse,
+          leftOperator = leftOperator,
+          rightOperator = rightOperator
+        )
+      } else {
+        throw error(peek, "Expected : after expression.")
+      }
+    }
+
+    expr
   }
 
   private def equality(): Expr = {

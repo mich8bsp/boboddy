@@ -11,6 +11,8 @@ object ASTPrinter {
       value.map(_.toString).getOrElse("nil")
     case UnaryExpr(operator, right) =>
       parenthesize(operator.lexeme, right)
+    case TernaryExpr(left, leftOperator, middle, rightOperator, right) =>
+      s"(${leftOperator.lexeme} ${print(left)} (${rightOperator.lexeme} ${print(middle)} ${print(right)}))"
   }
 
   private def parenthesize(name: String, exprs: Expr*): String = {
