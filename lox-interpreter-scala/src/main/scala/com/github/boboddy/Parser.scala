@@ -94,7 +94,8 @@ class Parser(tokens: Seq[Token]) {
 
   private def binaryExpr(subExpression: () => Expr,
                          tokenTypes: TokenType*): Expr = {
-    if(matchExpr(tokenTypes: _*)){
+    val tokensValidOnlyAsBinary = tokenTypes.filterNot(_ == TokenType.MINUS)
+    if(matchExpr(tokensValidOnlyAsBinary: _*)){
       //binary expression is missing left side expression
       subExpression() // read right side expression and discard
       throw error(previous, "Expect expression.")
