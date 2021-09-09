@@ -19,7 +19,7 @@ class Interpreter {
     case ExpressionStmt(expr) => evaluate(expr)
     case VarStmt(name, initializer) =>
       val value: Option[Any] = initializer.flatMap(evaluate)
-      env.define(name.lexeme, value)
+      env.define(name, value)
     case BlockStmt(statements) =>
       val blockEnv: Environment = new Environment(Some(env))
       statements.foreach(execute(_)(blockEnv))

@@ -5,8 +5,15 @@ import scala.collection.mutable
 class Environment(enclosingEnv: Option[Environment] = None) {
   private val values: mutable.Map[String, Option[Any]] = mutable.Map[String, Option[Any]]()
 
-  def define(name: String, value: Option[Any]): Unit = {
-    values.put(name, value)
+  def define(name: Token, value: Option[Any]): Unit = {
+    if(isDefined(name.lexeme)){
+      throw RuntimeError(name, s"Variable '${name.lexeme}' is already defined in this scope.")
+    }
+    values.put(name.lexeme, value)
+  }
+
+  def isDefined(name: String): Boolean = {
+    values.contains(name) || enclosingEnv.exists(_.isDefined(name))
   }
 
   def get(name: Token): Option[Any] = {
