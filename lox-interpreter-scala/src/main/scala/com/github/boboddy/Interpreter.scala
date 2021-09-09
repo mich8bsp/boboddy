@@ -25,7 +25,17 @@ class Interpreter {
       statements.foreach(execute(_)(blockEnv))
   }
 
-  def evaluate(expression: Expr)
+  def interpret(expression: Expr): Unit = {
+    try {
+      implicit val env: Environment = globalEnvironment
+      println(stringify(evaluate(expression)))
+    } catch {
+      case e: RuntimeError =>
+        ErrorHandler.runtimeError(e)
+    }
+  }
+
+  private def evaluate(expression: Expr)
               (implicit env: Environment): Option[Any] = expression match {
     case BinaryExpr(left, operator, right) =>
       val leftValue: Option[Any] = evaluate(left)
@@ -100,7 +110,10 @@ class Interpreter {
           }
         case _ => throw RuntimeError(leftOperator, "Unrecognized ternary operator.")
       }
-    case VariableExpr(name) => env.get(name)
+    case VariableExpr(name) => env.get(name) match {
+      case Some(v) => Some(v)
+      case None => throw RuntimeError(name, "Uninitialized variable.")
+    }
     case AssignExpr(name, value) => {
       val evaluatedValue = evaluate(value)
       env.assign(name, evaluatedValue)

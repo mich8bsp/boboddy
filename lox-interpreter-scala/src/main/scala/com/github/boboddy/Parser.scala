@@ -7,13 +7,22 @@ import scala.collection.mutable
 class Parser(tokens: Seq[Token]) {
   private var current: Int = 0
 
-  def parse(): Seq[Stmt] = try {
+  def parseStatements(): Seq[Stmt] = try {
     // program -> declaration* EOF
     val statements: mutable.Buffer[Stmt] = mutable.Buffer()
     while(!isAtEnd){
       declaration().foreach(statements.append)
     }
     statements.toSeq
+  } finally {
+    current = 0
+  }
+
+  def parseExpression(): Option[Expr] = try {
+    Some(expression())
+  } catch {
+    case _: ParseError =>
+      None
   } finally {
     current = 0
   }

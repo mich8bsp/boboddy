@@ -1,11 +1,15 @@
 package com.github.boboddy
 
 object ErrorHandler {
+
+  var silent = false
   var hadError = false
   var hadRuntimeError = false
 
   def error(line: Int, message: String, where: String = ""): Unit = {
-    System.err.println(s"[line $line] Error$where: $message")
+    if(!silent){
+      System.err.println(s"[line $line] Error$where: $message")
+    }
     hadError = true
   }
 
@@ -19,8 +23,16 @@ object ErrorHandler {
   }
 
   def runtimeError(e: RuntimeError): Unit = {
-    System.err.println(s"${e.getMessage}\n[line ${e.token.line}]")
+    if(!silent){
+      System.err.println(s"${e.getMessage}\n[line ${e.token.line}]")
+    }
     hadRuntimeError = true
+  }
+
+  def reset(): Unit = {
+    silent = false
+    hadError = false
+    hadRuntimeError = false
   }
 }
 

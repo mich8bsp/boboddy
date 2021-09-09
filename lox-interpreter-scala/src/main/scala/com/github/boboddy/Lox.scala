@@ -11,10 +11,10 @@ object Lox {
       val fileContent: String = source.getLines().mkString("\n")
       run(fileContent)
 
-      if(ErrorHandler.hadError){
+      if (ErrorHandler.hadError) {
         System.exit(65)
       }
-      if(ErrorHandler.hadRuntimeError){
+      if (ErrorHandler.hadRuntimeError) {
         System.exit(70)
       }
     } finally {
@@ -24,10 +24,9 @@ object Lox {
 
   def runPrompt(): Unit = {
     var line = StdIn.readLine()
-    while(line != null){
+    while (line != null) {
       run(line)
-      ErrorHandler.hadError = false
-      ErrorHandler.hadRuntimeError = false
+      ErrorHandler.reset()
       line = StdIn.readLine()
     }
   }
@@ -36,14 +35,20 @@ object Lox {
     val scanner: Scanner = new Scanner(source)
     val tokens: Seq[Token] = scanner.scanTokens()
     val parser: Parser = new Parser(tokens)
-    val parsedAst: Seq[Stmt] = parser.parse()
-    parsedAst match {
-      case Nil =>
-      case _ if ErrorHandler.hadError =>
-      case ast => interpreter.interpret(ast)
+
+    ErrorHandler.silent = true
+    val expr: Option[Expr] = parser.parseExpression()
+    ErrorHandler.reset()
+    val parsedAsExpressionSuccess: Boolean = expr.exists(_ => !ErrorHandler.hadError)
+    if(parsedAsExpressionSuccess){
+      parser.parseExpression().foreach(ast => interpreter.interpret(ast))
+    }else{
+      parser.parseStatements().filter(_ => !ErrorHandler.hadError) match {
+        case Nil =>
+        case ast => interpreter.interpret(ast)
+      }
     }
   }
-
 
 
   def main(args: Array[String]): Unit = args match {
