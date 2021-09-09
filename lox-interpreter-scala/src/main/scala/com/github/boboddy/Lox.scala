@@ -35,10 +35,11 @@ object Lox {
     val scanner: Scanner = new Scanner(source)
     val tokens: Seq[Token] = scanner.scanTokens()
     val parser: Parser = new Parser(tokens)
-    val parsedAst: Option[Expr] = parser.parse()
+    val parsedAst: Seq[Stmt] = parser.parse()
     parsedAst match {
-      case None | Some(_) if ErrorHandler.hadError =>
-      case Some(ast) => Interpreter.interpret(ast)
+      case Nil =>
+      case _ if ErrorHandler.hadError =>
+      case ast => Interpreter.interpret(ast)
     }
   }
 

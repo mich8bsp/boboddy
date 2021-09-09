@@ -3,10 +3,12 @@ package com.github.boboddy
 object Interpreter {
 
 
-  def interpret(expression: Expr): Unit = {
+  def interpret(statements: Seq[Stmt]): Unit = {
     try {
-      val evaluationRes: Option[Any] = evaluate(expression)
-      println(stringify(evaluationRes))
+      statements.foreach({
+        case PrintStmt(expr) => println(stringify(evaluate(expr)))
+        case ExpressionStmt(expr) => evaluate(expr)
+      })
     } catch {
       case e: RuntimeError =>
         ErrorHandler.runtimeError(e)

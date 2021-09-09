@@ -2,15 +2,41 @@ package com.github.boboddy
 
 import TokenType._
 
+import scala.collection.mutable
+
 class Parser(tokens: Seq[Token]) {
   private var current: Int = 0
 
-  def parse(): Option[Expr] = try {
-    Some(expression())
+  def parse(): Seq[Stmt] = try {
+    val statements: mutable.Buffer[Stmt] = mutable.Buffer()
+    while(!isAtEnd){
+      statements.append(statement())
+    }
+    statements.toSeq
   } catch {
-    case _: ParseError => None
+    case _: ParseError => Seq()
   } finally {
     current = 0
+  }
+
+  private def statement(): Stmt = {
+    if(matchExpr(PRINT)){
+      printStatement()
+    }else{
+      expressionStatement()
+    }
+  }
+
+  private def printStatement(): Stmt = {
+    val expr = expression()
+    consume(SEMICOLON, "Expect ';' after value.")
+    PrintStmt(expr)
+  }
+
+  private def expressionStatement(): Stmt = {
+    val expr = expression()
+    consume(SEMICOLON, "Expect ';' after value.")
+    ExpressionStmt(expr)
   }
 
   private def expression(): Expr = {
@@ -18,15 +44,15 @@ class Parser(tokens: Seq[Token]) {
   }
 
   private def ternary(): Expr = {
-    //ternary -> equality ("?") ternary (":") ternary | equality
+    //ternary -> equality ("?") expression (":") expression | equality
     var expr = equality()
 
     if (matchExpr(QUESTION_MARK)) {
       val leftOperator = previous
-      val exprIfTrue = ternary()
+      val exprIfTrue = expression()
       if (matchExpr(COLON)) {
         val rightOperator = previous
-        val exprIfFalse = ternary()
+        val exprIfFalse = expression()
         expr = TernaryExpr(
           left = expr,
           middle = exprIfTrue,

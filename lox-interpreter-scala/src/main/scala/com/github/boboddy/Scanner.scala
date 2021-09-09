@@ -122,8 +122,8 @@ class Scanner(source: String) {
     while (peek != '"' && !isAtEnd) {
       if (peek == '\n') {
         line += 1
-        advance()
       }
+      advance()
     }
 
     if (isAtEnd) {
