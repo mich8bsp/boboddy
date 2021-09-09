@@ -10,13 +10,38 @@ class Parser(tokens: Seq[Token]) {
   def parse(): Seq[Stmt] = try {
     val statements: mutable.Buffer[Stmt] = mutable.Buffer()
     while(!isAtEnd){
-      statements.append(statement())
+      declaration().foreach(statements.append)
     }
     statements.toSeq
-  } catch {
-    case _: ParseError => Seq()
   } finally {
     current = 0
+  }
+
+  private def declaration(): Option[Stmt] = {
+    try {
+      if(matchExpr(VAR)){
+        Some(varDeclaration())
+      }else{
+        Some(statement())
+      }
+    }catch {
+      case _: ParseError =>
+        synchronize()
+        None
+    }
+  }
+
+  private def varDeclaration(): Stmt = {
+    val name: Token = consumeAndGet(IDENTIFIER, "Expect variable name.")
+
+    val initializer: Option[Expr] = if(matchExpr(EQUAL)){
+      Some(expression())
+    }else{
+      None
+    }
+
+    consume(SEMICOLON, "Expect ';' after variable declaration.")
+    VarStmt(name = name, initializer = initializer)
   }
 
   private def statement(): Stmt = {
@@ -40,7 +65,24 @@ class Parser(tokens: Seq[Token]) {
   }
 
   private def expression(): Expr = {
-    ternary()
+    assignment()
+  }
+
+  private def assignment(): Expr = {
+    val expr = ternary()
+
+    if(matchExpr(EQUAL)){
+      val equals = previous
+      val value = assignment()
+
+      expr match {
+        case VariableExpr(name) => AssignExpr(name, value)
+        case _ => error(equals, "Invalid assignment target.")
+          expr
+      }
+    }else{
+      expr
+    }
   }
 
   private def ternary(): Expr = {
@@ -100,7 +142,7 @@ class Parser(tokens: Seq[Token]) {
   }
 
   private def primary(): Expr = {
-    //primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+    //primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
     if (matchExpr(FALSE)) {
       LiteralExpr(Some(false))
     } else if (matchExpr(TRUE)) {
@@ -109,6 +151,8 @@ class Parser(tokens: Seq[Token]) {
       LiteralExpr(None)
     } else if (matchExpr(NUMBER, STRING)) {
       LiteralExpr(previous.literal)
+    } else if (matchExpr(IDENTIFIER)){
+      VariableExpr(previous)
     } else if (matchExpr(LEFT_PAREN)) {
       val expr = expression()
       consume(RIGHT_PAREN, "Expect ')' after expression.")
@@ -143,6 +187,15 @@ class Parser(tokens: Seq[Token]) {
     if (check(tokenType)) {
       advance()
     } else {
+      throw error(peek, errorMessage)
+    }
+  }
+
+  private def consumeAndGet(tokenType: TokenType,
+                            errorMessage: String): Token = {
+    if(check(tokenType)){
+      getAndAdvance()
+    }else{
       throw error(peek, errorMessage)
     }
   }
@@ -188,6 +241,12 @@ class Parser(tokens: Seq[Token]) {
     if (!isAtEnd) {
       current += 1
     }
+  }
+
+  private def getAndAdvance(): Token = {
+    val t = peek
+    advance()
+    t
   }
 
   private def isAtEnd: Boolean = {

@@ -3,6 +3,7 @@ package com.github.boboddy
 import scala.io.{Source, StdIn}
 
 object Lox {
+  private val interpreter = new Interpreter
 
   def runFile(path: String): Unit = {
     val source = Source.fromFile(path)
@@ -39,7 +40,7 @@ object Lox {
     parsedAst match {
       case Nil =>
       case _ if ErrorHandler.hadError =>
-      case ast => Interpreter.interpret(ast)
+      case ast => interpreter.interpret(ast)
     }
   }
 

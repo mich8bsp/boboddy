@@ -18,3 +18,5 @@ case class TernaryExpr(
                       rightOperator: Token,
                       right: Expr
                       ) extends Expr
+case class VariableExpr(name: Token) extends Expr
+case class AssignExpr(name: Token, value: Expr) extends Expr

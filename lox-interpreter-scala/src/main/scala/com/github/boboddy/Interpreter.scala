@@ -1,13 +1,16 @@
 package com.github.boboddy
 
-object Interpreter {
-
+class Interpreter {
+  private val env: Environment = new Environment()
 
   def interpret(statements: Seq[Stmt]): Unit = {
     try {
       statements.foreach({
         case PrintStmt(expr) => println(stringify(evaluate(expr)))
         case ExpressionStmt(expr) => evaluate(expr)
+        case VarStmt(name, initializer) =>
+          val value: Option[Any] = initializer.flatMap(evaluate)
+          env.define(name.lexeme, value)
       })
     } catch {
       case e: RuntimeError =>
@@ -89,6 +92,12 @@ object Interpreter {
           }
         case _ => throw RuntimeError(leftOperator, "Unrecognized ternary operator.")
       }
+    case VariableExpr(name) => env.get(name)
+    case AssignExpr(name, value) => {
+      val evaluatedValue = evaluate(value)
+      env.assign(name, evaluatedValue)
+      evaluatedValue
+    }
   }
 
   private def isTruthy(exprValue: Option[Any]): Boolean = exprValue match {
