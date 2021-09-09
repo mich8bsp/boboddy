@@ -1,24 +1,32 @@
 package com.github.boboddy
 
 class Interpreter {
-  private val env: Environment = new Environment()
+  private val globalEnvironment: Environment = new Environment()
 
   def interpret(statements: Seq[Stmt]): Unit = {
     try {
-      statements.foreach({
-        case PrintStmt(expr) => println(stringify(evaluate(expr)))
-        case ExpressionStmt(expr) => evaluate(expr)
-        case VarStmt(name, initializer) =>
-          val value: Option[Any] = initializer.flatMap(evaluate)
-          env.define(name.lexeme, value)
-      })
+      implicit val env: Environment = globalEnvironment
+      statements.foreach(execute)
     } catch {
       case e: RuntimeError =>
         ErrorHandler.runtimeError(e)
     }
   }
 
-  def evaluate(expression: Expr): Option[Any] = expression match {
+  private def execute(statement: Stmt)
+                     (implicit env: Environment): Unit = statement match {
+    case PrintStmt(expr) => println(stringify(evaluate(expr)))
+    case ExpressionStmt(expr) => evaluate(expr)
+    case VarStmt(name, initializer) =>
+      val value: Option[Any] = initializer.flatMap(evaluate)
+      env.define(name.lexeme, value)
+    case BlockStmt(statements) =>
+      val blockEnv: Environment = new Environment(Some(env))
+      statements.foreach(execute(_)(blockEnv))
+  }
+
+  def evaluate(expression: Expr)
+              (implicit env: Environment): Option[Any] = expression match {
     case BinaryExpr(left, operator, right) =>
       val leftValue: Option[Any] = evaluate(left)
       val rightValue: Option[Any] = evaluate(right)

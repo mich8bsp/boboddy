@@ -8,6 +8,7 @@ class Parser(tokens: Seq[Token]) {
   private var current: Int = 0
 
   def parse(): Seq[Stmt] = try {
+    // program -> declaration* EOF
     val statements: mutable.Buffer[Stmt] = mutable.Buffer()
     while(!isAtEnd){
       declaration().foreach(statements.append)
@@ -18,6 +19,7 @@ class Parser(tokens: Seq[Token]) {
   }
 
   private def declaration(): Option[Stmt] = {
+    // declaration -> varDeclaration | statement
     try {
       if(matchExpr(VAR)){
         Some(varDeclaration())
@@ -32,6 +34,7 @@ class Parser(tokens: Seq[Token]) {
   }
 
   private def varDeclaration(): Stmt = {
+    // varDeclaration -> "var" IDENTIFIER ( "=" expression )? ";"
     val name: Token = consumeAndGet(IDENTIFIER, "Expect variable name.")
 
     val initializer: Option[Expr] = if(matchExpr(EQUAL)){
@@ -45,8 +48,11 @@ class Parser(tokens: Seq[Token]) {
   }
 
   private def statement(): Stmt = {
+    // statement -> expressionStatement | printStatement | blockStatement
     if(matchExpr(PRINT)){
       printStatement()
+    }else if(matchExpr(LEFT_BRACE)){
+      BlockStmt(blockStatement())
     }else{
       expressionStatement()
     }
@@ -62,6 +68,17 @@ class Parser(tokens: Seq[Token]) {
     val expr = expression()
     consume(SEMICOLON, "Expect ';' after value.")
     ExpressionStmt(expr)
+  }
+
+  private def blockStatement(): Seq[Stmt] = {
+    // blockStatement -> "{" declaration* "}"
+    val statements: mutable.Buffer[Stmt] = mutable.Buffer()
+    while(!check(RIGHT_BRACE) && !isAtEnd){
+      declaration().foreach(statements.append)
+    }
+
+    consume(RIGHT_BRACE, "Expect '}' after block.")
+    statements.toSeq
   }
 
   private def expression(): Expr = {
