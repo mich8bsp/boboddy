@@ -3,7 +3,7 @@ import scala.util.Random
 
 object Chapter4 {
 
-  class GraphNode[T](val id: T, val children: mutable.Buffer[GraphNode[T]] = mutable.Buffer())
+  class GraphNode[T](val id: T, val children: mutable.Buffer[GraphNode[T]] = mutable.Buffer[GraphNode[T]]())
 
   class MyGraph[T](val root: GraphNode[T])
 
@@ -321,9 +321,9 @@ object Chapter4 {
 
     def getNodeAtIdx(idx: Int): RandomAccessBinaryTreeNode = {
       (idx - left.map(_.treeSize).getOrElse(0)) match {
-        case _ < 0 => left.get.getNodeAtIdx(idx)
+        case x if x < 0 => left.get.getNodeAtIdx(idx)
         case 0 => this
-        case _ > 0 => right.get.getNodeAtIdx(idx - left.map(_.treeSize).getOrElse(0) - 1)
+        case x if x > 0 => right.get.getNodeAtIdx(idx - left.map(_.treeSize).getOrElse(0) - 1)
       }
     }
   }
