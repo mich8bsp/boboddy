@@ -12,16 +12,17 @@ object Problem12 {
         500 -> "D",
         1000 -> "M"
       )
-      def innerIntToRoman(currNum: Int, denomination: Int): String = {
+      def digitToRoman(digit: Int, denomination: Int): String = {
         lazy val currDenLetter: String = denominationToLetter(denomination)
         lazy val nextDenLetter: String = denominationToLetter(denomination * 10)
         lazy val midDenLetter: String = denominationToLetter(denomination * 5)
-        currNum match {
+        digit match {
           case 0 => ""
-          case _ if currNum >= 1 && currNum <= 3 => currDenLetter * currNum
-          case 4 => currDenLetter + midDenLetter
-          case 5 => midDenLetter
-          case _ if currNum >= 6 && currNum <= 8 => midDenLetter + (currDenLetter * (currNum - 5))
+          case _ if digit >= 1 && digit <= 3 => currDenLetter * digit
+          case _ if digit >= 4 && digit <= 8 =>
+            (currDenLetter * math.max(5 - digit, 0)) +
+              midDenLetter +
+              (currDenLetter * math.max(digit - 5, 0))
           case 9 => currDenLetter + nextDenLetter
         }
       }
@@ -29,7 +30,7 @@ object Problem12 {
       val maxPower = 3
       (maxPower to 0 by -1).map(power => {
         val denominator = math.pow(10, power).toInt
-        innerIntToRoman((num % (denominator * 10)) / denominator, denominator)
+        digitToRoman((num % (denominator * 10)) / denominator, denominator)
       }).reduce(_ + _)
     }
   }
