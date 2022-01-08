@@ -45,17 +45,17 @@ object WordleBot {
     generateOutputForGuessAndSolution(guess, solution.word) == output
   }
 
-  def play(): Option[String] = {
+  def play()(implicit config: GameConfig): Option[String] = {
     var possibleSolutions: Seq[WordleWord] = Dictionary.wordleWords
     var turn = 0
     var solution: Option[WordleWord] = None
 
-    while(turn < 6 && solution.isEmpty){
+    while(turn < config.maxNumOfTurns && solution.isEmpty){
       val guess: WordleWord = chooseWord(possibleSolutions)
       println(guess.word)
       val output = StdIn.readLine
       output.toCharArray.toSet match {
-        case x if x.subsetOf(VALID_GUESS_EVALUATION_CHARS) =>
+        case x if x.subsetOf(VALID_GUESS_EVALUATION_CHARS) && output.length == config.wordLength =>
           possibleSolutions = possibleSolutions.filter(isValidSolution(_, guess.word, output))
           if(possibleSolutions.size == 1){
             solution = possibleSolutions.headOption
@@ -71,7 +71,10 @@ object WordleBot {
     solution.map(_.word)
   }
 
+  case class GameConfig(wordLength: Int, maxNumOfTurns: Int)
+
   def main(args: Array[String]): Unit = {
+    implicit val config: GameConfig = GameConfig(wordLength = 5, maxNumOfTurns = 6)
     play() match {
       case Some(x) => println(s"Solved! Word is $x")
       case None => println(s"Could not solve")

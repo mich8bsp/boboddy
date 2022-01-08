@@ -1,8 +1,11 @@
+import WordleBot.GameConfig
+
 import scala.io.Source
 
 object Dictionary {
   private val dictionary: Seq[String] = Source.fromResource("words_alpha.txt").getLines().toList
-  val wordleWords: Seq[WordleWord] = dictionary.filter(_.length == 5).map(WordleWord)
+  def wordleWords(implicit config: GameConfig): Seq[WordleWord] = dictionary.filter(_.length == config.wordLength)
+    .map(WordleWord)
 }
 
 case class WordleWord(word: String){
