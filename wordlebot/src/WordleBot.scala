@@ -1,22 +1,20 @@
 import scala.io.StdIn
 
 object WordleBot {
+  val VALID_GUESS_EVALUATION_CHARS = Set('g', 'y', '-')
+  val INVALID_GUESS_EVALUATION = 'X'
+
+  private def combineCounts[T](a: Map[T, Int], b: Map[T, Int]): Map[T, Int] = (a.keySet ++ b.keySet)
+    .map(k => k -> (a.getOrElse(k, 0) + b.getOrElse(k, 0)))
+    .toMap
 
   private def chooseWord(possibleSolutions: Seq[WordleWord]): WordleWord = {
     val totalCharOccurrences: Map[(Char, Int), Int] = possibleSolutions.map(_.charsDistribution)
-      .map(_.map({
-        case (c, n) => (c, n) -> 1
-      }))
-      .foldLeft(Map[(Char, Int), Int]())((a, b) => {
-        (a.keySet ++ b.keySet).map(charWithNumOfOccurrencesInWord => charWithNumOfOccurrencesInWord -> {
-          a.getOrElse(charWithNumOfOccurrencesInWord, 0) + b.getOrElse(charWithNumOfOccurrencesInWord, 0)
-        }).toMap
-      })
+      .map(_.map(_ -> 1))
+      .foldLeft(Map[(Char, Int), Int]())(combineCounts)
 
     def getScore(word: WordleWord): Int = {
-      word.charsDistribution.map({
-        case (c, n) => totalCharOccurrences.getOrElse((c, n), 0)
-      }).sum
+      word.charsDistribution.map(occur => totalCharOccurrences.getOrElse(occur, 0)).sum
     }
 
     possibleSolutions.maxBy(getScore)
@@ -56,14 +54,17 @@ object WordleBot {
       val guess: WordleWord = chooseWord(possibleSolutions)
       println(guess.word)
       val output = StdIn.readLine
-      if(output == "X"){
-        possibleSolutions = possibleSolutions.filterNot(_.word == guess.word)
-      }else{
-        possibleSolutions = possibleSolutions.filter(isValidSolution(_, guess.word, output))
-        if(possibleSolutions.size == 1){
-          solution = possibleSolutions.headOption
-        }
-        turn += 1
+      output.toCharArray.toSet match {
+        case x if x.subsetOf(VALID_GUESS_EVALUATION_CHARS) =>
+          possibleSolutions = possibleSolutions.filter(isValidSolution(_, guess.word, output))
+          if(possibleSolutions.size == 1){
+            solution = possibleSolutions.headOption
+          }
+          turn += 1
+        case o if o == Set(INVALID_GUESS_EVALUATION) =>
+          possibleSolutions = possibleSolutions.filterNot(_.word == guess.word)
+        case _ =>
+          println("invalid output")
       }
     }
 
