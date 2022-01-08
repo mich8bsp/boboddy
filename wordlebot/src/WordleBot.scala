@@ -3,15 +3,20 @@ import scala.io.StdIn
 object WordleBot {
 
   private def chooseWord(possibleSolutions: Seq[WordleWord]): WordleWord = {
-    val totalCharOccurrences: Map[Char, Int] = possibleSolutions.map(_.charsDistribution)
-      .foldLeft(Map[Char, Int]())((a, b) => {
-        (a.keySet ++ b.keySet).map(c => c -> {
-          a.getOrElse(c, 0) + b.getOrElse(c, 0)
+    val totalCharOccurrences: Map[(Char, Int), Int] = possibleSolutions.map(_.charsDistribution)
+      .map(_.map({
+        case (c, n) => (c, n) -> 1
+      }))
+      .foldLeft(Map[(Char, Int), Int]())((a, b) => {
+        (a.keySet ++ b.keySet).map(charWithNumOfOccurrencesInWord => charWithNumOfOccurrencesInWord -> {
+          a.getOrElse(charWithNumOfOccurrencesInWord, 0) + b.getOrElse(charWithNumOfOccurrencesInWord, 0)
         }).toMap
       })
 
     def getScore(word: WordleWord): Int = {
-      word.word.toCharArray.map(c => totalCharOccurrences.getOrElse(c, 0)).sum
+      word.charsDistribution.map({
+        case (c, n) => totalCharOccurrences.getOrElse((c, n), 0)
+      }).sum
     }
 
     possibleSolutions.maxBy(getScore)
