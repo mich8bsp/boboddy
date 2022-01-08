@@ -23,17 +23,19 @@ object WordleBot {
   private def isValidSolution(solution: WordleWord, guess: String, output: String): Boolean = {
     def generateOutputForGuessAndSolution(guess: String, solution: String): String = {
       val solutionArr: Array[Char] = solution.toCharArray
+      def markSolutionChecked(idx: Int): Unit = solutionArr(idx) = '-'
+
       val exactMatches: Seq[(Char, Int)] = guess.toCharArray.zipWithIndex.filter({
         case (c, i) => solutionArr(i) == c
       })
 
-      exactMatches.foreach(x => solutionArr(x._2) = '-')
+      exactMatches.map(_._2).foreach(markSolutionChecked)
 
       guess.toCharArray.zipWithIndex.map({
         case (c, i) => if(exactMatches.contains((c, i))){
           'g'
         }else if(solutionArr.contains(c)){
-          solutionArr(solutionArr.indexOf(c)) = '-'
+          markSolutionChecked(solutionArr.indexOf(c))
           'y'
         }else{
           '-'
