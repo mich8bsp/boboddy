@@ -56,9 +56,9 @@ object CloneHeroSongsDownloader {
 
     val file = new File(outputFilePath)
     val bw = new BufferedWriter(new FileWriter(file))
-    bw.write("[")
+    bw.write("[\n")
     for (line <- outLines) {
-      bw.write(line)
+      bw.write(line + "\n")
     }
     bw.write("]")
     bw.close()
