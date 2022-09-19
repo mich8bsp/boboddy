@@ -1,7 +1,7 @@
 # Project exclude paths
 /out/
-/project/target/
 /target/
 .bsp
 .idea
 *.iml
+/*/target/
