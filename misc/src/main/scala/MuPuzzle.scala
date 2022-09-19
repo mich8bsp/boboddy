@@ -12,7 +12,7 @@ object MuPuzzle extends App {
   }
 
   object Rule1 extends Rule {
-    val id = 1
+    override val id = 1
 
     override def apply(word: String): Set[String] = {
       if (word.lastOption.contains('I')) {
@@ -24,7 +24,7 @@ object MuPuzzle extends App {
   }
 
   object Rule2 extends Rule {
-    val id = 2
+    override val id = 2
 
     override def apply(word: String): Set[String] = {
       if (word.headOption.contains('M')) {
@@ -38,31 +38,23 @@ object MuPuzzle extends App {
   object Rule3 extends Rule {
     override val id: Int = 3
 
-    override def apply(word: String): Set[String] = {
-      val pattern = "III"
-      word.zipWithIndex
-        .sliding(pattern.length)
-        .collect {
-          case window if window.map(_._1).mkString == pattern =>
-            s"${word.substring(0, window.head._2)}U${word.substring(window.last._2 + 1, word.length)}"
-        }
-        .toSet
-    }
+    override def apply(word: String): Set[String] = findAndReplace(word, "III", "U")
   }
 
   object Rule4 extends Rule {
     override val id: Int = 4
 
-    override def apply(word: String): Set[String] = {
-      val pattern = "UU"
-      word.zipWithIndex
-        .sliding(pattern.length)
-        .collect {
-          case window if window.map(_._1).mkString == pattern =>
-            s"${word.substring(0, window.head._2)}${word.substring(window.last._2 + 1, word.length)}"
-        }
-        .toSet
-    }
+    override def apply(word: String): Set[String] = findAndReplace(word, "UU", "")
+  }
+
+  private def findAndReplace(word: String, pattern: String, replacement: String): Set[String] = {
+    word.zipWithIndex
+      .sliding(pattern.length)
+      .collect {
+        case window if window.map(_._1).mkString == pattern =>
+          s"${word.substring(0, window.head._2)}$replacement${word.substring(window.last._2 + 1, word.length)}"
+      }
+      .toSet
   }
 
   def search(start: Set[String], target: String): Option[RulesApplied] = {
